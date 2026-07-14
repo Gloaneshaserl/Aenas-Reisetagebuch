@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Vokabel-Reisetagebuch des Aeneas</title>
+<style>
+  :root{
+    --parchment:#EFE3C4;
+    --parchment-deep:#E4D5AC;
+    --ink:#2B1B12;
+    --ink-soft:#5A4531;
+    --terracotta:#A6472A;
+    --terracotta-deep:#7E3520;
+    --bronze:#8C6A2F;
+    --verdigris:#4F7268;
+    --navy:#22384A;
+    --gold:#C89B3C;
+    --card-shadow: 0 6px 18px rgba(43,27,18,0.25);
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 15% 10%, rgba(200,155,60,0.10), transparent 40%),
+      radial-gradient(circle at 85% 85%, rgba(79,114,104,0.12), transparent 45%),
+      var(--parchment);
+    background-attachment:fixed;
+    color:var(--ink);
+    font-family: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+    min-height:100vh;
+    padding:0 0 60px 0;
+  }
+  .wrap{max-width:900px;margin:0 auto;padding:0 18px;}
+
+  header.top{
+    padding:34px 18px 20px;
+    text-align:center;
+    border-bottom:2px solid var(--bronze);
+    background:linear-gradient(180deg, rgba(200,155,60,0.10), transparent);
+  }
+  .eyebrow{
+    font-family: 'Trebuchet MS', system-ui, sans-serif;
+    letter-spacing:0.32em;
+    text-transform:uppercase;
+    font-size:11px;
+    color:var(--terracotta-deep);
+    font-weight:700;
+  }
+  h1{
+    font-size:clamp(28px,5vw,42px);
+    letter-spacing:0.04em;
+    margin:8px 0 6px;
+    color:var(--ink);
+  }
+  .subtitle{
+    font-family: 'Trebuchet MS', system-ui, sans-serif;
+    color:var(--ink-soft);
+    font-size:14px;
+    max-width:520px;
+    margin:0 auto;
+    line-height:1.5;
+  }
+
+  /* progress road */
+  .roadwrap{margin:26px auto 6px;max-width:640px;padding:0 18px;}
+  .roadlabel{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-family:'Trebuchet MS',system-ui,sans-serif;font-size:12px;color:var(--ink-soft);
+    margin-bottom:6px;letter-spacing:0.04em;
+  }
+  .road{
+    height:14px;border-radius:99px;background:rgba(43,27,18,0.12);
+    overflow:hidden;border:1px solid rgba(43,27,18,0.25);
+  }
+  .road-fill{
+    height:100%;border-radius:99px;
+    background:linear-gradient(90deg,var(--terracotta),var(--gold));
+    transition:width .6s ease;
+  }
+
+  main{padding-top:28px;}
+
+  /* MAP VIEW */
+  #mapView .path{
+    position:relative;
+    padding:10px 0 10px;
+  }
+  .station-row{
+    display:flex;align-items:center;gap:16px;
+    padding:10px 6px;
+    cursor:pointer;
+    border-radius:12px;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .station-row:hover{background:rgba(166,71,42,0.08);}
+  .station-row:active{transform:scale(0.99);}
+  .node{
+    flex:0 0 auto;
+    width:52px;height:52px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Trebuchet MS',system-ui,sans-serif;
+    font-weight:700;font-size:16px;
+    background:var(--parchment-deep);
+    border:2.5px solid var(--bronze);
+    color:var(--ink-soft);
+    position:relative;
+  }
+  .node.done{background:var(--verdigris);border-color:var(--verdigris);color:#fff;}
+  .node.next{background:var(--terracotta);border-color:var(--terracotta-deep);color:#fff;
+    box-shadow:0 0 0 5px rgba(166,71,42,0.18);}
+  .connector{
+    width:2px;height:22px;background:repeating-linear-gradient(180deg,var(--bronze) 0 4px, transparent 4px 9px);
+    margin-left:25px;
+  }
+  .station-body{flex:1 1 auto;min-width:0;}
+  .station-title{font-size:17px;font-weight:700;color:var(--ink);}
+  .station-sub{
+    font-family:'Trebuchet MS',system-ui,sans-serif;
+    font-size:12px;color:var(--ink-soft);letter-spacing:0.02em;
+  }
+  .stars{font-size:14px;letter-spacing:1px;color:var(--gold);white-space:nowrap;}
+  .stars .off{color:rgba(43,27,18,0.22);}
+  .focus-tag{
+    display:inline-block;margin-left:6px;
+    font-family:'Trebuchet MS',system-ui,sans-serif;
+    font-size:9.5px;letter-spacing:0.05em;text-transform:uppercase;
+    background:rgba(166,71,42,0.14);color:var(--terracotta-deep);
+    padding:2px 6px;border-radius:6px;font-weight:700;
+  }
+
+  .toolbar{
+    display:flex;gap:10px;justify-content:center;flex-wrap:wrap;
+    margin:26px 0 6px;
+  }
+  button{
+    font-family:'Trebuchet MS',system-ui,sans-serif;
+    cursor:pointer;
+    border:none;
+  }
+  .btn{
+    background:var(--ink);color:var(--parchment);
+    padding:11px 20px;border-radius:99px;font-size:14px;font-weight:700;
+    letter-spacing:0.02em;
+  }
+  .btn.secondary{background:transparent;color:var(--ink);border:1.5px solid var(--bronze);}
+  .btn.wide{width:100%;}
+  .btn:disabled{opacity:0.4;cursor:default;}
+
+  /* STATION VIEW */
+  #stationView{display:none;}
+  .stationcard{
+    background:var(--parchment-deep);
+    border:1.5px solid var(--bronze);
+    border-radius:var(--radius);
+    box-shadow:var(--card-shadow);
+    padding:22px;
+    margin-bottom:20px;
+  }
+  .back-link{
+    font-family:'Trebuchet MS',system-ui,sans-serif;
+    font-size:13px;color:var(--ink-soft);cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;margin-bottom:14px;
+  }
+  .station-headline{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  .station-headline h2{margin:0;font-size:24px;}
+  .modeSwitch{display:flex;gap:8px;margin:18px 0 4px;}
+  .modeSwitch button{
+    flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:700;
+    background:rgba(43,27,18,0.06);color:var(--ink-soft);
+  }
+  .modeSwitch button.active{background:var(--terracotta);color:#fff;}
+
+  /* flashcards */
+  .flash-area{margin-top:16px;text-align:center;}
+  .flash-progress{font-family:'Trebuchet MS',system-ui,sans-serif;font-size:12px;color:var(--ink-soft);margin-bottom:10px;}
+  .flashcard{
+    background:var(--parchment);
+    border:2px solid var(--bronze);
+    border-radius:16px;
+    min-height:150px;
+    display:flex;align-items:center;justify-content:center;
+    padding:26px 18px;
+    font-size:26px;font-weight:700;
+    cursor:pointer;
+    user-select:none;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
+  }
+  .flashcard .hint{
+    display:block;font-family:'Trebuchet MS',system-ui,sans-serif;
+    font-size:11px;font-weight:400;color:var(--ink-soft);margin-top:10px;
+  }
+  .flash-lang{
+    font-family:'Trebuchet MS',system-ui,sans-serif;font-size:11px;letter-spacing:0.15em;
+    text-transform:uppercase;color:var(--terracotta-deep);margin-bottom:6px;font-weight:700;
+  }
+  .flash-buttons{display:flex;gap:10px;margin-top:16px;}
+  .flash-buttons button{flex:1;padding:12px;border-radius:10px;font-weight:700;font-size:14px;}
+  .fb-again{background:rgba(166,71,42,0.14);color:var(--terracotta-deep);}
+  .fb-know{background:rgba(79,114,104,0.18);color:var(--verdigris);}
+
+  /* quiz */
+  .quiz-area{margin-top:16px;}
+  .quiz-q{
+    font-family:'Trebuchet MS',system-ui,sans-serif;font-size:12px;color:var(--ink-soft);
+    display:flex;justify-content:space-between;margin-bottom:8px;
+  }
+  .quiz-word{
+    background:var(--parchment);border:2px solid var(--bronze);border-radius:14px;
+    padding:22px;text-align:center;font-size:24px;font-weight:700;margin-bottom:14px;
+  }
+  .options{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .opt{
+    background:var(--parchment);border:2px solid rgba(140,106,47,0.5);
+    border-radius:10px;padding:12px 10px;font-size:14px;font-family:'Trebuchet MS',system-ui,sans-serif;
+    text-align:left;color:var(--ink);
+  }
+  .opt.correct{background:rgba(79,114,104,0.25);border-color:var(--verdigris);}
+  .opt.wrong{background:rgba(166,71,42,0.2);border-color:var(--terracotta);}
+  .opt:disabled{cursor:default;}
+  .quiz-next{margin-top:14px;}
+
+  .result{
+    text-align:center;padding:14px 0 4px;
+  }
+  .result .bigstars{font-size:40px;color:var(--gold);letter-spacing:6px;}
+  .result h3{margin:6px 0 4px;}
+  .result p{font-family:'Trebuchet MS',system-ui,sans-serif;color:var(--ink-soft);font-size:14px;}
+
+  footer{
+    text-align:center;margin-top:36px;padding:0 20px;
+    font-family:'Trebuchet MS',system-ui,sans-serif;font-size:12px;color:var(--ink-soft);
+  }
+  details.parent-note{
+    max-width:640px;margin:30px auto 0;
+    font-family:'Trebuchet MS',system-ui,sans-serif;font-size:13px;color:var(--ink-soft);
+    background:rgba(255,255,255,0.35);border:1px solid rgba(140,106,47,0.35);
+    border-radius:10px;padding:12px 16px;
+  }
+  details.parent-note summary{cursor:pointer;font-weight:700;color:var(--ink);}
+  details.parent-note p{line-height:1.5;}
+
+  @media (max-width:480px){
+    .options{grid-template-columns:1fr;}
+    .node{width:44px;height:44px;font-size:14px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Vokabel-Reisetagebuch</div>
+    <h1>Auf den Spuren des Aeneas</h1>
+    <p class="subtitle">29 Stationen von Troja bis zur Gründung Roms &mdash; jeden Tag eine Station, maximal 15 Minuten. Karteikarten zuerst, dann die Prüfung. Sterne sammeln, Rom wachsen lassen.</p>
+  </header>
+
+  <div class="roadwrap">
+    <div class="roadlabel"><span id="roadLabel">0 von 29 Stationen</span><span id="roadPct">0%</span></div>
+    <div class="road"><div class="road-fill" id="roadFill" style="width:0%"></div></div>
+  </div>
+
+  <main class="wrap">
+    <div id="mapView">
+      <div class="path" id="pathList"></div>
+      <div class="toolbar">
+        <button class="btn secondary" id="mixBtn">Gemischte Wiederholung</button>
+        <button class="btn secondary" id="resetBtn">Fortschritt zurücksetzen</button>
+      </div>
+    </div>
+
+    <div id="stationView">
+      <div class="back-link" id="backLink">&larr; Zurück zur Karte</div>
+      <div class="stationcard">
+        <div class="station-headline">
+          <h2 id="svTitle"></h2>
+          <span class="stars" id="svStars"></span>
+        </div>
+        <div class="station-sub" id="svSub" style="font-family:'Trebuchet MS',system-ui,sans-serif;font-size:12px;color:var(--ink-soft);"></div>
+
+        <div class="modeSwitch">
+          <button id="modeCards">1&nbsp;&middot;&nbsp;Karteikarten</button>
+          <button id="modeQuiz">2&nbsp;&middot;&nbsp;Pr&uuml;fung</button>
+        </div>
+
+        <div class="flash-area" id="flashArea"></div>
+        <div class="quiz-area" id="quizArea" style="display:none;"></div>
+        <div class="result" id="resultArea" style="display:none;"></div>
+      </div>
+    </div>
+  </main>
+
+  <details class="parent-note">
+    <summary>Hinweis für Eltern</summary>
+    <p>Dieses Tool speichert den Fortschritt lokal im Browser (localStorage) auf dem jeweiligen Ger&auml;t &mdash; es braucht dazu weder Internet noch Anmeldung. Am besten die Datei einmal herunterladen und per Doppelklick im Browser &ouml;ffnen (Chrome, Edge oder Safari funktionieren gut); dann kann das Kind ganz selbst&auml;ndig &uuml;ben, auch offline und ohne Aufsicht, z.&nbsp;B. beim Papa. Wird die Datei auf einem anderen Ger&auml;t ge&ouml;ffnet, startet dort ein neuer, eigener Fortschritt. Reihenfolge ist nur eine Empfehlung &mdash; alle Stationen sind jederzeit frei anklickbar, sodass nichts blockiert, falls mal ein Tag ausf&auml;llt oder &uuml;bersprungen wird.</p>
+  </details>
+
+  <footer>Erstellt f&uuml;r die Sommerferien 2026 &middot; 15&nbsp;Minuten am Tag reichen f&uuml;r eine Station.</footer>
+</div>
+
+<script>
+/* ---------- DATA ---------- */
+// [lateinisch, deutsch] pairs. "focus" stations = muss neu gelernt werden. "review" = Auffrischung.
+const STATIONS = [
+{id:1, title:"Vor der Abreise", sub:"Lektion 1-4 · Auffrischung", type:"review",
+ words:[["puella","Mädchen"],["servus","Sklave, Diener"],["villa","Haus, Landhaus"],["equus","Pferd"],
+ ["familia","Familie"],["esse","sein"],["timere","fürchten, Angst haben"],["monere","mahnen, ermahnen"],
+ ["docere","lehren, unterrichten"],["respondere","antworten"],["gaudere","sich freuen"],["tenere","halten, besitzen"],
+ ["iam","schon, bereits"],["semper","immer"]]},
+{id:2, title:"Der Alltag in Troja", sub:"Lektion 5-8 · Auffrischung", type:"review",
+ words:[["flere","weinen, beweinen"],["placere","gefallen"],["statim","sofort"],["etiam","auch, sogar"],
+ ["habere","haben, halten"],["aqua","Wasser"],["populus","Volk"],["deus","Gott, Gottheit"],
+ ["valere","gesund sein, stark sein"],["videre","sehen"],["insula","Insel, Wohnblock"],["amare","lieben"],
+ ["rogare","fragen, bitten"],["portare","bringen, tragen"]]},
+{id:3, title:"Erste Prüfungen", sub:"Lektion 9-11 · Auffrischung", type:"review",
+ words:[["cenare","essen"],["spectare","betrachten, anschauen"],["superare","besiegen, übertreffen"],
+ ["patria","Heimat"],["filius","Sohn"],["venire","kommen"],["audire","hören"],["scire","wissen, kennen"],
+ ["habitare","wohnen, bewohnen"],["ingenium","Begabung, Talent"],["consilium","Plan, Rat, Beschluss"],
+ ["templum","Tempel"],["aedificium","Gebäude"],["donum","Geschenk"]]},
+{id:4, title:"Gefährliche Fahrt", sub:"Lektion 12-13 · 3 wichtige Wörter + Auffrischung", type:"focus3",
+ words:[["pretium","Preis, Wert"],["indicare","anzeigen, melden"],["manere","bleiben, erwarten"],
+ ["sine","ohne"],["cum","mit, zusammen mit"],["quinque","fünf"],["ego","ich"],["tu","du"],
+ ["nos","wir"],["vos","ihr"],["invenire","finden, erfinden"],["liberare","befreien, freilassen"],
+ ["errare","umherirren, sich irren"]], focusWords:["pretium","indicare","manere"]},
+{id:5, title:"Sturm auf hoher See", sub:"Lektion 14 · Auffrischung", type:"review",
+ words:[["magnus","groß, bedeutend"],["quattuor","vier"],["novus","neu, ungewöhnlich"],["multus","viel"],
+ ["bonus","gut, tüchtig"],["stultus","dumm"],["narrare","erzählen"],["de","von, über"],["tuus","dein"],
+ ["meus","mein"]]},
+{id:6, title:"Kreta", sub:"Lektion 15 · noch unsicher? Volles Training", type:"focus",
+ words:[["magister","Lehrer, Meister"],["puer","Junge"],["summus","der höchste, oberste"],["noster","unser"],
+ ["vir","Mann"],["auxilium","Hilfe"],["servare","bewahren, retten"],["antiquus","alt, altertümlich"],
+ ["clarus","klar, hell, berühmt"],["niger","schwarz, dunkel"],["pulcher","schön"],["autem","aber, andererseits"],
+ ["miser","arm, unglücklich"],["liber","frei"],["ager","Acker, Feld, Gebiet"],["vester","euer"],["vita","Leben"]]},
+{id:7, title:"Die Harpyien I", sub:"Lektion 16 · Teil 1 von 2 · volles Training", type:"focus",
+ words:[["duo","zwei, die beiden"],["carrus","Wagen, Karren"],["stare","stehen"],["bibere","trinken"],
+ ["dicere","sagen, sprechen"],["nuntius","Bote, Nachricht"],["mittere","schicken, werfen"],
+ ["scribere","schreiben, beschreiben"],["relinquere","verlassen, zurücklassen"]]},
+{id:8, title:"Die Harpyien II", sub:"Lektion 16 · Teil 2 von 2 · volles Training", type:"focus",
+ words:[["ducere","führen, ziehen"],["ab","von, von ... her"],["oppidum","Stadt, Kleinstadt"],
+ ["trahere","schleppen, ziehen"],["ostendere","zeigen, erklären"],["Campania","Kampanien"],
+ ["Vesuvius","der Vesuv"],["per","durch, hindurch"],["vinea","Weinberg, Weinstock"]]},
+{id:9, title:"Ankunft in Sizilien", sub:"Lektion 17 · Auffrischung", type:"review",
+ words:[["consistere","stehenbleiben, haltmachen"],["facere","machen, tun, handeln"],
+ ["descendere","herabsteigen"],["magis","mehr"],["aspicere","erblicken, ansehen"],["posse","können"],
+ ["pius","fromm, pflichtbewusst"],["vinum","Wein"],["capere","fassen, nehmen, erobern"],["quam","als, wie"]]},
+{id:10, title:"Kaufleute & Senatoren", sub:"Lektion 18 · Auffrischung", type:"review",
+ words:[["senator","Senator"],["mercator","Kaufmann, Händler"],["vendere","verkaufen"],
+ ["imperator","Feldherr, Kaiser"],["petere","erstreben, bitten, angreifen"],["Graecus","Grieche, griechisch"],
+ ["adesse","da sein, helfen"],["apud","bei"],["honor","Ehre, Ehrenamt"],["uxor","Ehefrau"]]},
+{id:11, title:"Wünsche & Gefühle", sub:"Lektion 19 · volles Training", type:"focus",
+ words:[["quod","weil, dass"],["thermae","warme Bäder, Thermen"],["velle","wollen"],["amor","Liebe"],
+ ["quia","weil"],["se","sich"],["soror","Schwester"],["nolle","nicht wollen"],["malle","lieber wollen"],
+ ["animus","Geist, Mut, Gesinnung"],["mulier","Frau"],["quamquam","obwohl"],["si","wenn, falls"],
+ ["plenus","voll"],["pecunia","Geld, Vermögen"],["viginti","zwanzig"],["fur","Dieb"],["clamor","Geschrei, Lärm"],
+ ["dum","während, solange, bis"]]},
+{id:12, title:"Familie & Freiheit", sub:"Lektion 20 · volles Training", type:"focus",
+ words:[["salutare","begrüßen"],["frater","Bruder"],["pater","Vater"],["mater","Mutter"],["tam","so"],
+ ["potestas","Amtsgewalt, Macht"],["civitas","Gemeinde, Staat"],["voluntas","Wille, Absicht"],
+ ["praemium","Belohnung, Lohn"],["dare","geben"],["servitus","Sklaverei"],["libertas","Freiheit"],
+ ["pietas","Pflichtgefühl, Frömmigkeit"],["carus","lieb, teuer, wertvoll"],["heri","gestern"]]},
+{id:13, title:"Die Götter des Olymp", sub:"Lektion 21 · volles Training", type:"focus",
+ words:[["Iuppiter","Jupiter"],["caelum","Himmel"],["terra","Erde, Land"],["Minerva","Minerva"],
+ ["Diana","Diana"],["bestia","wildes Tier"],["Neptunus","Neptun"],["Mercurius","Merkur"],
+ ["ceteri","die übrigen"],["solum","nur"],["existimare","meinen, einschätzen"],["varius","bunt, verschieden"],
+ ["nuntiare","melden"],["mortuus","tot, gestorben"],["Tartarus","die Unterwelt"]]},
+{id:14, title:"Gladiatorenspiele", sub:"Lektion 22 · volles Training", type:"focus",
+ words:[["amphitheatrum","Amphitheater"],["propter","wegen"],["gladiator","Gladiator"],["urbs","Stadt"],
+ ["pars","Teil, Seite"],["primus","der, die, das erste"],["ecce","schau! sieh da!"],["victor","Sieger"],
+ ["exercere","üben, trainieren, quälen"],["mors","Tod"],["dolor","Schmerz"],["vel","oder"],
+ ["negotium","Aufgabe, Geschäft"],["interficere","töten, vernichten"],["annus","Jahr"],
+ ["virtus","Tapferkeit, Tugend"]]},
+{id:15, title:"Berge & Völker", sub:"Lektion 23 · volles Training", type:"focus",
+ words:[["aestas","Sommer"],["sol","Sonne"],["regio","Gebiet, Gegend"],["homo","Mensch"],
+ ["natio","Volk, Volksstamm"],["deducere","wegführen, hinführen"],["multitudo","große Zahl, Menge"],
+ ["mons","Berg"],["educere","herausführen"],["adducere","heranführen, veranlassen"],
+ ["fons","Quelle, Ursprung"],["magnitudo","Größe"],["deesse","abwesend sein, fehlen"],
+ ["surgere","sich erheben, aufstehen"],["decimus","der, die, das zehnte"],["leo","Löwe"],
+ ["nisi","wenn nicht"],["amittere","verlieren, aufgeben"]]},
+{id:16, title:"Gefahr unterwegs", sub:"Lektion 24 · volles Training", type:"focus",
+ words:[["mirus","erstaunlich, sonderbar"],["antea","vorher, früher"],["primum","erstens, zuerst"],
+ ["curare","pflegen, sorgen für"],["comprehendere","begreifen, ergreifen, festnehmen"],
+ ["periculum","Gefahr"],["malus","schlecht, schlimm"],["sub","unter"],["monstrum","Ungeheuer"],
+ ["an","oder (etwa)"]]},
+{id:17, title:"Die Nacht, in der Troja fiel", sub:"Lektion 25 · volles Training", type:"focus",
+ words:[["timor","Angst, Furcht"],["cum","als (plötzlich), wenn"],["altus","hoch, tief"],
+ ["complere","anfüllen, auffüllen"],["vox","Stimme, Laut"],["flere","weinen, beweinen"],
+ ["tectum","Dach, Haus"],["delere","zerstören, vernichten"],["lux","Licht, Tageslicht"],
+ ["vix","kaum, mit Mühe"],["nox","Nacht"],["nondum","noch nicht"],["posse","können"],["velle","wollen"],
+ ["esse","sein, sich befinden"],["salus","Rettung, Gesundheit, Glück"],["fuga","Flucht"]]},
+{id:18, title:"Flucht durch die Trümmer", sub:"Lektion 26 · volles Training", type:"focus",
+ words:[["liberi","Kinder"],["temptare","angreifen, versuchen"],["tenebrae","Dunkelheit, Finsternis"],
+ ["iacere","liegen"],["cadere","fallen"],["castra","Lager"],["arma","Waffen, Gerät"],
+ ["factum","Tat, Handlung, Tatsache"],["is, ea, id","dieser, diese, dieses"],["Pompeii","Pompeji"],
+ ["paulo post","ein wenig später"],["postea","nachher, später"],["reliquiae","Überbleibsel, Ruine"]]},
+{id:19, title:"Herkules' Aufgaben", sub:"Lektion 27 · volles Training", type:"focus",
+ words:[["Eurystheus","Eurystheus"],["rex","König"],["sedere","sitzen"],["movere","bewegen, beeindrucken"],
+ ["Hercules","Herkules"],["venire","kommen"],["duodecim","zwölf"],["labor","Arbeit, Anstrengung"],
+ ["facere","machen, tun, handeln"],["torquere","drehen, quälen"],["manere","bleiben, erwarten"],
+ ["interficere","töten, vernichten"],["secundus","der, die, das zweite; günstig"],
+ ["tertius","der, die, das dritte"],["vincere","siegen, übertreffen"],["quintus","der, die, das fünfte"],
+ ["dicere","sagen, sprechen"],["relinquere","verlassen, zurücklassen"]]},
+{id:20, title:"Der Höllenhund Zerberus", sub:"Lektion 28 · volles Training", type:"focus",
+ words:[["gaudere","sich freuen über"],["laborare","leiden an, in Not sein"],["dolere","traurig sein über"],
+ ["carere","frei sein von, nicht haben"],["officium","Dienst, Pflicht"],["praestare","gewähren, leisten, zeigen"],
+ ["liber","frei von"],["nocte","nachts"],["cadere","fallen"],["Pluto","Pluto"],
+ ["prohibere","abhalten von, hindern an"],["Cerberus","Zerberus"],["etsi","auch wenn, obwohl"],
+ ["ostendere","zeigen, erklären"]]},
+{id:21, title:"Das Hölzerne Pferd", sub:"Lektion 29 · volles Training", type:"focus",
+ words:[["Troianus","trojanisch, Trojaner"],["ora","Küste"],["putare","glauben, meinen"],["bellum","Krieg"],
+ ["gerere","ausführen, führen, tragen"],["certe","gewiss, sicherlich"],["paulatim","allmählich"],
+ ["cedere","gehen, nachgeben, weichen"],["petere","erstreben, bitten, angreifen"],
+ ["consistere","stehenbleiben, haltmachen"],["alius","ein anderer"],["animadvertere","bemerken"],
+ ["Laocoon","Laokoon"],["honestus","ehrenhaft, angesehen"],["sentire","fühlen, meinen, wahrnehmen"],
+ ["constat","es ist bekannt, es steht fest"]]},
+{id:22, title:"Dido & Karthago", sub:"Lektion 30 · volles Training", type:"focus",
+ words:[["Dido","Dido"],["monumentum","Denkmal"],["civis","Bürger"],["Aeneas","Äneas"],
+ ["sibi","für sich"],["quaerere","suchen, fragen, erwerben wollen"],["suus","sein, ihr"],
+ ["secum","mit sich, bei sich"],["cogitare","denken, beabsichtigen"],["convenire","zusammenkommen, besuchen"],
+ ["maritus","Ehemann"],["vivere","leben"],["Carthago","Karthago"],["finis","Ende, Grenze, Ziel"]]},
+{id:23, title:"Latinus & Turnus", sub:"Lektion 31 · volles Training", type:"focus",
+ words:[["Latini","die Latiner"],["munire","bauen, befestigen, schützen"],["circum","rings um"],
+ ["Latinus","Latinus"],["desperare","die Hoffnung aufgeben, verzweifeln"],["Turnus","Turnus"],
+ ["sperare","erwarten, hoffen"],["demonstrare","beweisen, darlegen"],["audacia","Frechheit, Kühnheit"],
+ ["violare","verwunden, verletzen, entehren"],["ferrum","Eisen, Waffe"],["surgere","sich erheben, aufstehen"],
+ ["caedere","fällen, töten"],["donare","schenken"],["venia","Nachsicht, Verzeihung"],["Italia","Italien"],
+ ["quidem","freilich, gewiss, zwar"],["occidere","niederschlagen, töten"]]},
+{id:24, title:"Romulus & Remus", sub:"Lektion 32 · volles Training", type:"focus",
+ words:[["Faustulus","Faustulus"],["acer","energisch, heftig, scharf"],["bibere","trinken"],
+ ["pellere","stoßen, schlagen, vertreiben"],["celer","schnell"],["tamquam","wie"],
+ ["signum","Merkmal, Zeichen, Statue"],["iuvenis","junger Mann, jung"],["comes","Begleiter(in), Gefährte"],
+ ["miles","Soldat"],["repellere","zurückstoßen, abweisen, vertreiben"]]},
+{id:25, title:"Amulius & Numitor", sub:"Lektion 33 · volles Training", type:"focus",
+ words:[["locus","Ort, Platz, Stelle"],["novem","neun"],["aspicere","erblicken, ansehen"],
+ ["unus","einer, ein einziger"],["fortis","kräftig, tapfer"],["tristis","traurig, unfreundlich"],
+ ["defendere","abwehren, verteidigen"],["tres","drei"],["Amulius","Amulius"],
+ ["accusare","anklagen, beschuldigen"],["turpis","unanständig, hässlich, schändlich"],
+ ["postquam","nachdem, als"],["Numitor","Numitor"],["dulcis","angenehm, süß"],["crudelis","grausam"],
+ ["omnis","jeder, ganz; alle"]]},
+{id:26, title:"Die Gründung Roms", sub:"Lektion 34 · volles Training", type:"focus",
+ words:[["qui, quae, quod","welcher; der, die, das"],["idoneus","geeignet, passend"],
+ ["deligere","auswählen"],["condere","verwahren, erbauen, gründen"],["ridere","lachen, auslachen"],
+ ["respondere","antworten"],["maxime","am meisten, besonders"],["opportunus","geeignet, günstig"],
+ ["multum","sehr, viel"],["Aventinus","der Aventin"],["contendere","sich anstrengen, kämpfen, eilen"],
+ ["ergo","also, deshalb"],["Livius","Livius"],["accipere","erhalten, erfahren, annehmen"],
+ ["scribere","schreiben, beschreiben"]]},
+{id:27, title:"Rom wächst", sub:"Lektion 35 · volles Training", type:"focus",
+ words:[["et...et","sowohl ... als auch"],["arcessere","herbeirufen, holen"],["communis","gemeinsam, allgemein"],
+ ["tutus","sicher"],["copia","Menge, Vorrat; Truppen"],["hostis","Feind"],["occupare","besetzen, einnehmen"],
+ ["quemadmodum","auf welche Weise, wie"],["fortuna","Schicksal, Glück"],["gloria","Ruhm, Ehre"],
+ ["inanis","leer, wertlos"],["credere","glauben, anvertrauen"]]},
+{id:28, title:"Tarquinius Superbus", sub:"Lektion 36 · volles Training", type:"focus",
+ words:[["patres","Väter, Vorfahren, Senatoren"],["vitam agere","ein Leben führen, leben"],
+ ["beatus","glücklich, reich"],["plebs","das (einfache) Volk"],["resistere","stehenbleiben, Widerstand leisten"],
+ ["mos","Sitte, Brauch, Charakter"],["lex","Gesetz, Bedingung"],["appetere","erstreben, angreifen"],
+ ["aperire","aufdecken, öffnen"],["Tarquinii","die Tarquinier"],["quando","wann"],
+ ["virgo","Mädchen, Jungfrau"],["parentes","Eltern"],["cura","Pflege, Sorge"],
+ ["concedere","erlauben, nachgeben, zugestehen"]]},
+{id:29, title:"Freiheit für Rom!", sub:"Lektion 37 · Finale · volles Training", type:"focus",
+ words:[["abire","weggehen"],["adire","herantreten, bitten, aufsuchen"],["eo","dorthin; deswegen"],
+ ["concordia","Eintracht, Einigkeit"],["ire","gehen"],["inire","hineingehen, beginnen"],
+ ["exire","herausgehen, hinausgehen"],["omittere","aufgeben, beiseite lassen"],["quo","wo, wohin"],
+ ["redire","zurückgehen, zurückkehren"],["tribunus","Tribun"],["ordo","Ordnung, Reihe, Stand"],
+ ["confirmare","bekräftigen, ermutigen, stärken"]]}
+];
+
+/* ---------- STATE / STORAGE ---------- */
+const KEY = "aeneas_progress_v1";
+function loadProgress(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {};
+}
+function saveProgress(p){
+  try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+}
+let progress = loadProgress(); // { [stationId]: {stars:0-3, weak:[la,...]} }
+
+let currentStation = null;
+let mode = "cards";
+let cardIdx = 0;
+let cardShowBack = false;
+let quizPool = [];
+let quizIdx = 0;
+let quizCorrect = 0;
+let quizAnswered = false;
+
+/* ---------- RENDER: MAP ---------- */
+function starString(n){
+  let s = "";
+  for(let i=0;i<3;i++) s += i<n ? "★" : "<span class='off'>★</span>";
+  return s;
+}
+
+function renderMap(){
+  const list = document.getElementById("pathList");
+  list.innerHTML = "";
+  let doneCount = 0;
+  let nextFound = false;
+  STATIONS.forEach((st, idx) => {
+    const p = progress[st.id] || {stars:0};
+    if(p.stars > 0) doneCount++;
+    const row = document.createElement("div");
+    row.className = "station-row";
+    row.onclick = () => openStation(st.id);
+
+    const isNext = !nextFound && p.stars === 0;
+    if(isNext) nextFound = true;
+
+    const nodeClass = p.stars >= 2 ? "node done" : (isNext ? "node next" : "node");
+    const focusTag = (st.type === "focus" || st.type === "focus3") ? "<span class='focus-tag'>Neu lernen</span>" : "";
+
+    row.innerHTML = `
+      <div class="${nodeClass}">${st.id}</div>
+      <div class="station-body">
+        <div class="station-title">${st.title}${focusTag}</div>
+        <div class="station-sub">${st.sub}</div>
+      </div>
+      <div class="stars">${starString(p.stars||0)}</div>
+    `;
+    list.appendChild(row);
+    if(idx < STATIONS.length-1){
+      const c = document.createElement("div");
+      c.className = "connector";
+      list.appendChild(c);
+    }
+  });
+
+  document.getElementById("roadLabel").textContent = doneCount + " von " + STATIONS.length + " Stationen";
+  document.getElementById("roadPct").textContent = Math.round(100*doneCount/STATIONS.length) + "%";
+  document.getElementById("roadFill").style.width = (100*doneCount/STATIONS.length) + "%";
+}
+
+/* ---------- STATION VIEW ---------- */
+function openStation(id, mixedWords){
+  currentStation = STATIONS.find(s => s.id === id) || {id:"mix", title:"Gemischte Wiederholung", sub:"Wörter aus allen bisherigen Stationen", words: mixedWords, type:"mix"};
+  if(mixedWords) currentStation.words = mixedWords;
+  document.getElementById("mapView").style.display = "none";
+  document.getElementById("stationView").style.display = "block";
+  document.getElementById("svTitle").textContent = currentStation.title;
+  document.getElementById("svSub").textContent = currentStation.sub || "";
+  const p = progress[currentStation.id] || {stars:0};
+  document.getElementById("svStars").innerHTML = starString(p.stars||0);
+  setMode("cards");
+}
+
+function closeStation(){
+  document.getElementById("stationView").style.display = "none";
+  document.getElementById("mapView").style.display = "block";
+  renderMap();
+}
+
+function setMode(m){
+  mode = m;
+  document.getElementById("modeCards").classList.toggle("active", m==="cards");
+  document.getElementById("modeQuiz").classList.toggle("active", m==="quiz");
+  document.getElementById("resultArea").style.display = "none";
+  if(m === "cards"){
+    document.getElementById("flashArea").style.display = "block";
+    document.getElementById("quizArea").style.display = "none";
+    cardIdx = 0; cardShowBack = false;
+    renderCard();
+  } else {
+    document.getElementById("flashArea").style.display = "none";
+    document.getElementById("quizArea").style.display = "block";
+    startQuiz();
+  }
+}
+
+/* ---------- FLASHCARDS ---------- */
+function renderCard(){
+  const area = document.getElementById("flashArea");
+  const words = currentStation.words;
+  if(cardIdx >= words.length){
+    area.innerHTML = `<div class="result"><div class="bigstars">✓</div><h3>Karteikarten fertig!</h3><p>Weiter geht's mit der Prüfung.</p></div>
+      <button class="btn wide" onclick="setMode('quiz')" style="margin-top:10px;">Zur Prüfung</button>`;
+    return;
+  }
+  const [la, de] = words[cardIdx];
+  area.innerHTML = `
+    <div class="flash-progress">Karte ${cardIdx+1} / ${words.length}</div>
+    <div class="flashcard" id="flashcard">
+      <div>
+        <div class="flash-lang">${cardShowBack ? "Deutsch" : "Latein"}</div>
+        ${cardShowBack ? de : la}
+        <span class="hint">antippen zum Umdrehen</span>
+      </div>
+    </div>
+    <div class="flash-buttons">
+      <button class="fb-again" onclick="cardAnswer(false)">muss ich üben</button>
+      <button class="fb-know" onclick="cardAnswer(true)">kann ich</button>
+    </div>
+  `;
+  document.getElementById("flashcard").onclick = () => {
+    cardShowBack = !cardShowBack;
+    renderCard();
+  };
+}
+function cardAnswer(knew){
+  if(!knew){
+    const p = progress[currentStation.id] || {stars:0, weak:[]};
+    p.weak = p.weak || [];
+    const la = currentStation.words[cardIdx][0];
+    if(!p.weak.includes(la)) p.weak.push(la);
+    progress[currentStation.id] = p;
+    saveProgress(progress);
+  }
+  cardIdx++;
+  cardShowBack = false;
+  renderCard();
+}
+
+/* ---------- QUIZ ---------- */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+function startQuiz(){
+  const words = currentStation.words;
+  const p = progress[currentStation.id] || {};
+  // weak words appear first / more likely, then rest shuffled, cap at 14
+  let weak = words.filter(w => (p.weak||[]).includes(w[0]));
+  let rest = shuffle(words.filter(w => !(p.weak||[]).includes(w[0])));
+  quizPool = shuffle(weak.concat(rest)).slice(0, Math.min(14, words.length));
+  quizIdx = 0; quizCorrect = 0; quizAnswered = false;
+  renderQuiz();
+}
+function renderQuiz(){
+  const area = document.getElementById("quizArea");
+  if(quizIdx >= quizPool.length){
+    finishQuiz();
+    return;
+  }
+  const [la, de] = quizPool[quizIdx];
+  const allWords = currentStation.words;
+  let distractors = shuffle(allWords.filter(w => w[1] !== de)).slice(0,3).map(w=>w[1]);
+  while(distractors.length < 3){ distractors.push("—"); }
+  const options = shuffle([de, ...distractors]);
+  quizAnswered = false;
+  area.innerHTML = `
+    <div class="quiz-q"><span>Frage ${quizIdx+1} / ${quizPool.length}</span><span>Richtig: ${quizCorrect}</span></div>
+    <div class="quiz-word">${la}</div>
+    <div class="options" id="optsWrap"></div>
+    <div class="quiz-next" id="nextWrap"></div>
+  `;
+  const wrap = document.getElementById("optsWrap");
+  options.forEach(opt => {
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.textContent = opt;
+    b.onclick = () => answerQuiz(opt, de, la);
+    wrap.appendChild(b);
+  });
+}
+function answerQuiz(chosen, correctDe, la){
+  if(quizAnswered) return;
+  quizAnswered = true;
+  const buttons = document.querySelectorAll("#optsWrap .opt");
+  buttons.forEach(b => {
+    b.disabled = true;
+    if(b.textContent === correctDe) b.classList.add("correct");
+    else if(b.textContent === chosen) b.classList.add("wrong");
+  });
+  const correct = chosen === correctDe;
+  if(correct) quizCorrect++;
+  else{
+    const p = progress[currentStation.id] || {stars:0, weak:[]};
+    p.weak = p.weak || [];
+    if(!p.weak.includes(la)) p.weak.push(la);
+    progress[currentStation.id] = p;
+    saveProgress(progress);
+  }
+  document.getElementById("nextWrap").innerHTML = `<button class="btn wide" id="nextBtn">${quizIdx+1 < quizPool.length ? "Weiter" : "Ergebnis anzeigen"}</button>`;
+  document.getElementById("nextBtn").onclick = () => { quizIdx++; renderQuiz(); };
+}
+function finishQuiz(){
+  const pct = quizPool.length ? quizCorrect/quizPool.length : 0;
+  let stars = 0;
+  if(pct >= 0.9) stars = 3;
+  else if(pct >= 0.7) stars = 2;
+  else if(pct >= 0.5) stars = 1;
+  const p = progress[currentStation.id] || {stars:0, weak:[]};
+  if(currentStation.id !== "mix"){
+    p.stars = Math.max(p.stars||0, stars);
+    // clear weak words that were answered correctly this round is complex; simplest: if 3 stars, clear weak list
+    if(stars === 3) p.weak = [];
+    progress[currentStation.id] = p;
+    saveProgress(progress);
+  }
+  document.getElementById("quizArea").style.display = "none";
+  const res = document.getElementById("resultArea");
+  res.style.display = "block";
+  const msg = stars === 3 ? "Hervorragend! Diese Station sitzt." : stars === 2 ? "Sehr gut, noch ein bisschen üben." : stars === 1 ? "Guter Anfang, morgen nochmal versuchen." : "Kein Problem – einfach nochmal mit den Karteikarten starten.";
+  res.innerHTML = `
+    <div class="bigstars">${starString(stars)}</div>
+    <h3>${quizCorrect} von ${quizPool.length} richtig</h3>
+    <p>${msg}</p>
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button class="btn secondary" style="flex:1;" onclick="setMode('cards')">Karten üben</button>
+      <button class="btn" style="flex:1;" onclick="setMode('quiz')">Nochmal</button>
+    </div>
+  `;
+  document.getElementById("svStars").innerHTML = starString(p.stars||0);
+}
+
+/* ---------- MIXED REVIEW ---------- */
+function startMixedReview(){
+  let pool = [];
+  STATIONS.forEach(st => {
+    const p = progress[st.id];
+    if(p && p.stars > 0){
+      pool = pool.concat(st.words);
+      if(p.weak && p.weak.length){
+        const weakPairs = st.words.filter(w => p.weak.includes(w[0]));
+        pool = pool.concat(weakPairs, weakPairs); // weight weak words more
+      }
+    }
+  });
+  if(pool.length < 4){
+    alert("Noch keine Stationen abgeschlossen – zuerst ein paar Stationen üben, dann gibt's hier die große Mischung!");
+    return;
+  }
+  const sample = shuffle(pool).slice(0, 16);
+  openStation("mix", sample);
+}
+
+/* ---------- INIT ---------- */
+document.getElementById("backLink").onclick = closeStation;
+document.getElementById("modeCards").onclick = () => setMode("cards");
+document.getElementById("modeQuiz").onclick = () => setMode("quiz");
+document.getElementById("mixBtn").onclick = startMixedReview;
+document.getElementById("resetBtn").onclick = () => {
+  if(confirm("Wirklich den ganzen Fortschritt löschen? Das kann nicht rückgängig gemacht werden.")){
+    progress = {};
+    saveProgress(progress);
+    renderMap();
+  }
+};
+renderMap();
+</script>
+</body>
+</html>
